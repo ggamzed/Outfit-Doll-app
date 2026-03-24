@@ -6,7 +6,6 @@ export default function MainPage()
 {
     return (
         <View style={styles.container}>
-
             <View style={styles.contentArea}>
                 <ImageBackground
                     source={require('../../assets/podium.png')}
@@ -41,10 +40,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    podiumImage: {
+    podiumImage:
+	{
         resizeMode: 'contain',
     },
-    avatar: {
+    avatar:
+	{
         width: 500,
         height: 700,
         resizeMode: 'contain',
