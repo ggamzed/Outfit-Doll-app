@@ -6,7 +6,7 @@ export const Metrics = {
 	screenWidth: width,
 	screenHeight: height,
 
-	tabBarHeight: 60,
+	tabBarHeight: 50,
 	tabIconSize: 28,
 	//tabIconSizeFocused: 35,
 

@@ -1,74 +1,66 @@
 import React, { useState } from 'react';
-import { 
-    StyleSheet, 
-    Text, 
-    View, 
-    FlatList, 
-    TouchableOpacity, 
-    Image, 
-    
-} from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, Image } from "react-native";
+
+import { ScreenWrapper } from "@/src/components/common/ScreenWrapper";
+
 import { Metrics } from "@/src/constants/Metrics";
 import { Colors } from "@/src/constants/Colors";
 
-// Sahte Veri Seti (Mühendislikte Mock Data diyoruz)
+
 const CATEGORIES = [
-    { id: '1', name: 'All', icon: '✨' },
-    { id: '2', name: 'T-shirts', icon: '👕' },
-    { id: '3', name: 'Pants', icon: '👖' },
-    { id: '4', name: 'Dresses', icon: '👗' },
-    { id: '5', name: 'Shoes', icon: '👟' },
+    { id: '1', name: 'All'},
+    { id: '2', name: 'Jackets'},
+    { id: '3', name: 'Tops'},
+    { id: '4', name: 'Bottoms'},
+    { id: '5', name: 'Dresses'},
 ];
 
-const CLOTHING_ITEMS = Array.from({ length: 12 }).map((_, index) => ({
-    id: String(index),
-    image: null, // Buraya gerçek resim linkleri gelecek
-}));
+// MOCK DATA
+const CLOTHING_ITEMS = [
+    { id: '1', categoryId: '2', name: 'Beyaz Tişört', image: null }, // T-shirts
+    { id: '2', categoryId: '2', name: 'Siyah Tişört', image: null }, // T-shirts
+    { id: '3', categoryId: '3', name: 'Mavi Kot', image: null },     // Pants
+    { id: '4', categoryId: '5', name: 'Nike Air', image: null },    // Shoes
+    { id: '5', categoryId: '3', name: 'bluz', image: null },    // Shoes
+    // Eğer burası boşsa [], ekranda hiç kutu görünmez!
+];
 
-export default function WardrobeScreen() {
-    const [activeTab, setActiveTab] = useState('Items');
-    const [selectedCategory, setSelectedCategory] = useState('1');
+export default function WardrobeScreen()
+{
+    const [activeHeader, setActiveHeader] = useState('Items');
+    const [activeCategory, setActiveCategory] = useState('1');
+
+	const filteredItems = activeCategory === '1'
+        ? CLOTHING_ITEMS
+        : CLOTHING_ITEMS.filter(item => item.categoryId === activeCategory);
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* 1. HEADER SEKMELERİ */}
+        <ScreenWrapper>
             <View style={styles.headerContainer}>
-                <TouchableOpacity onPress={() => setActiveTab('Items')}>
-                    <Text style={[styles.tabText, activeTab === 'Items' && styles.activeTabText]}>Items</Text>
-                    {activeTab === 'Items' && <View style={styles.underline} />}
+                <TouchableOpacity onPress={() => setActiveHeader('Items')}>
+                    <Text style={[styles.inactiveHeaderText, activeHeader === 'Items' && styles.activeHeaderText]}>Clothes</Text>
+                    {activeHeader === 'Items' && <View style={styles.underline} />}
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => setActiveTab('Outfits')}>
-                    <Text style={[styles.tabText, activeTab === 'Outfits' && styles.activeTabText]}>Outfits</Text>
-                    {activeTab === 'Outfits' && <View style={styles.underline} />}
+                <TouchableOpacity onPress={() => setActiveHeader('Outfits')}>
+                    <Text style={[styles.inactiveHeaderText, activeHeader === 'Outfits' && styles.activeHeaderText]}>Accessories</Text>
+                    {activeHeader === 'Outfits' && <View style={styles.underline} />}
                 </TouchableOpacity>
             </View>
 
-            {/* 2. YATAY KATEGORİ LİSTESİ */}
-            <View style={styles.categoryWrapper}>
-                <FlatList
-                    data={CATEGORIES}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity 
-                            onPress={() => setSelectedCategory(item.id)}
-                            style={[
-                                styles.categoryCircle, 
-                                selectedCategory === item.id && styles.selectedCategoryCircle
-                            ]}
-                        >
-                            <Text style={styles.categoryIcon}>{item.icon}</Text>
-                        </TouchableOpacity>
-                    )}
-                />
-            </View>
+            <View style={styles.categoryContainer}>
+				{CATEGORIES.map((item) => (
+					<TouchableOpacity 
+						key={item.id}
+						onPress={() => setActiveCategory(item.id)}
+						style={[ styles.inactiveCategoryCircle, activeCategory === item.id && styles.activeCategoryCircle ]} >
+						<Text style={[styles.inactiveCategoryText, activeCategory === item.id && styles.activeCategoryText]}> {item.name} </Text>
+					</TouchableOpacity>
+				))}
+			</View>
 
-            {/* 3. 3'LÜ IZGARA (GRID) LİSTESİ */}
             <FlatList
-                data={CLOTHING_ITEMS}
+                data={filteredItems}
                 numColumns={3}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.gridContent}
@@ -79,78 +71,105 @@ export default function WardrobeScreen() {
                             <Image source={{ uri: item.image }} style={styles.itemImage} />
                         ) : (
                             <View style={styles.imagePlaceholder}>
-                                <Text style={{ color: '#ccc', fontSize: 24 }}>+</Text>
                             </View>
                         )}
                     </TouchableOpacity>
                 )}
             />
-        </SafeAreaView>
+        </ScreenWrapper>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FDE2F3', // Görseldeki pembe tonu
-    },
-    headerContainer: {
+    headerContainer:
+	{
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginTop: 20,
-        paddingBottom: 10,
+        marginTop: 10, //bunu wrapper a ekleyince üstte boşluk kalıyor
+        //paddingBottom: 10,
     },
-    tabText: {
+    inactiveHeaderText:
+	{
         fontSize: 18,
         fontWeight: '600',
-        color: '#888',
+		color: Colors.inactiveHeaderText,
     },
-    activeTabText: {
-        color: '#000',
+    activeHeaderText:
+	{
+        color: Colors.blackShadow,
     },
-    underline: {
+
+
+    underline:
+	{
         height: 3,
-        backgroundColor: '#000',
+        backgroundColor: Colors.blackShadow,
         width: '100%',
         marginTop: 4,
         borderRadius: 2,
     },
-    categoryWrapper: {
+
+    categoryContainer:
+	{
+		flexDirection: 'row',
+		justifyContent: 'space-around',
+		alignItems: 'center',
         paddingVertical: 20,
-        paddingLeft: 15,
+		//marginTop: 10,
+		paddingHorizontal: 30,
+		width: '100%',
     },
-    categoryCircle: {
+    inactiveCategoryCircle:
+	{
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: '#FFF',
+        backgroundColor: Colors.inactiveButton,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15,
+        //marginRight: 15,
         // Hafif gölge (iOS)
-        shadowColor: "#000",
+		shadowColor: Colors.blackShadow,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         // Gölge (Android)
         elevation: 3,
     },
-    selectedCategoryCircle: {
-        borderWidth: 2,
-        borderColor: '#000',
+    activeCategoryCircle:
+	{
+		backgroundColor: Colors.activeButton,
+
+		// bu ikisi ayrı ayrı lazım mı?
+        shadowOpacity: 0.4,
+        elevation: 3.5,
     },
-    categoryIcon: {
-        fontSize: 24,
+	inactiveCategoryText:
+	{
+        fontSize: 12,
+        fontWeight: '600',
+        color: Colors.inactiveButtonText,
     },
-    gridContent: {
+    activeCategoryText:
+	{
+		color: Colors.activeButtonText,
+        
+    },
+
+
+    gridContent:
+	{
         paddingHorizontal: 15,
-        paddingBottom: 100, // Tab bar'ın altında kalmasın diye
+        paddingBottom: 5,
     },
-    columnWrapper: {
-        justifyContent: 'space-between',
+    columnWrapper:
+	{
+        justifyContent: 'flex-start',
         marginBottom: 15,
+		gap: 10,
     },
-    itemCard: {
+    itemCard:
+	{
         width: (Metrics.screenWidth - 50) / 3, // 3 kolon + boşluklar
         height: (Metrics.screenWidth - 50) / 3,
         backgroundColor: '#FFF',
@@ -159,11 +178,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         elevation: 2,
     },
-    imagePlaceholder: {
+    imagePlaceholder:
+	{
         justifyContent: 'center',
         alignItems: 'center',
     },
-    itemImage: {
+    itemImage:
+	{
         width: '90%',
         height: '90%',
         resizeMode: 'contain',

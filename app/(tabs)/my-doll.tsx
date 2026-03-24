@@ -1,13 +1,14 @@
-
-
 import { Text, View } from "react-native";
+
+import { ScreenWrapper } from "@/src/components/common/ScreenWrapper";
+
 export default function Welcome()
 {
 	return (
-		<View>
+		<ScreenWrapper>
 			<Text>mydoll screen</Text>
 			
-		</View>
+		</ScreenWrapper>
 	);
 	
 }

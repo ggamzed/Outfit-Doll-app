@@ -1,13 +1,26 @@
 export const Colors = {
-	primary: '#FFB6D9',
-	secondary: '#FFF0F7',
-	background: '#FFF5F8',
-	textPrimary: '#333333',
-	textSecondary: '#CCCCCC',
-	white: '#FFFFFF',
-	button: '#c9c3c9ff',
+	//primary: '#FFB6D9',
+	//secondary: '#FFF0F7',
+
+
+	lightBackground: '#fff5feff',
+	darkBackground: '#FDE2F3',
+
+
+	//tab: '#fff5feff',
+
+	//textPrimary: '#333333',
+	//textSecondary: '#CCCCCC',
+	//white: '#FFFFFF',
+
+	inactiveButton: '#c9c3c9ff',
 	activeButton: '#303030ff',
-	buttonText: '#666',
+
+	inactiveButtonText: '#666',
 	activeButtonText: '#FFF',
-	shadow: '#000',
+
+	inactiveHeaderText: '#888',
+	blackShadow: '#000',
 } as const;
+
+// background: '#fff5feff',
