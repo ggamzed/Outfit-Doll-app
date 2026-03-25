@@ -8,11 +8,13 @@ import { Colors } from "@/src/constants/Colors";
 
 
 const CATEGORIES = [
-    { id: '1', name: 'All'},
-    { id: '2', name: 'Jackets'},
-    { id: '3', name: 'Tops'},
-    { id: '4', name: 'Bottoms'},
-    { id: '5', name: 'Dresses'},
+    { id: '1', name: 'All' },
+    { id: '2', name: 'Jacket' },
+    { id: '3', name: 'Top' },
+    { id: '4', name: 'Bottom' },
+    { id: '5', name: 'Dress' },
+    { id: '6', name: 'Shoe' },
+    { id: '7', name: 'Accessory' },
 ];
 
 // MOCK DATA
@@ -27,7 +29,7 @@ const CLOTHING_ITEMS = [
 
 export default function WardrobeScreen()
 {
-    const [activeHeader, setActiveHeader] = useState('Items');
+    const [activeHeader, setActiveHeader] = useState('Clothes');
     const [activeCategory, setActiveCategory] = useState('1');
 
 	const filteredItems = activeCategory === '1'
@@ -37,27 +39,42 @@ export default function WardrobeScreen()
     return (
         <ScreenWrapper>
             <View style={styles.headerContainer}>
-                <TouchableOpacity onPress={() => setActiveHeader('Items')}>
-                    <Text style={[styles.inactiveHeaderText, activeHeader === 'Items' && styles.activeHeaderText]}>Clothes</Text>
-                    {activeHeader === 'Items' && <View style={styles.underline} />}
+                <TouchableOpacity onPress={() => setActiveHeader('Clothes')}>
+                    <Text style={[styles.inactiveHeaderText, activeHeader === 'Clothes' && styles.activeHeaderText]}>Clothes</Text>
+                    {activeHeader === 'Clothes' && <View style={styles.underline} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => setActiveHeader('Outfits')}>
-                    <Text style={[styles.inactiveHeaderText, activeHeader === 'Outfits' && styles.activeHeaderText]}>Accessories</Text>
+                    <Text style={[styles.inactiveHeaderText, activeHeader === 'Outfits' && styles.activeHeaderText]}>Outfits</Text>
                     {activeHeader === 'Outfits' && <View style={styles.underline} />}
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.categoryContainer}>
-				{CATEGORIES.map((item) => (
-					<TouchableOpacity 
-						key={item.id}
-						onPress={() => setActiveCategory(item.id)}
-						style={[ styles.inactiveCategoryCircle, activeCategory === item.id && styles.activeCategoryCircle ]} >
-						<Text style={[styles.inactiveCategoryText, activeCategory === item.id && styles.activeCategoryText]}> {item.name} </Text>
-					</TouchableOpacity>
-				))}
-			</View>
+			<View style={styles.categoryContainer}>
+				<FlatList
+					horizontal
+					showsHorizontalScrollIndicator={false}
+					data={CATEGORIES}
+					keyExtractor={(item) => item.id}
+					contentContainerStyle={styles.categoryScrollContent}
+					renderItem={({ item }) => (
+						<TouchableOpacity 
+							onPress={() => setActiveCategory(item.id)}
+							style={[ 
+								styles.inactiveCategoryCircle, 
+								activeCategory === item.id && styles.activeCategoryCircle 
+							]} 
+						>
+							<Text style={[
+								styles.inactiveCategoryText, 
+								activeCategory === item.id && styles.activeCategoryText
+							]}>
+								{item.name}
+							</Text>
+						</TouchableOpacity>
+					)}
+				/>
+			</View>	
 
             <FlatList
                 data={filteredItems}
@@ -86,7 +103,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-around',
         marginTop: 10, //bunu wrapper a ekleyince üstte boşluk kalıyor
-        //paddingBottom: 10,
+        paddingBottom: 20,
     },
     inactiveHeaderText:
 	{
@@ -98,8 +115,6 @@ const styles = StyleSheet.create({
 	{
         color: Colors.blackShadow,
     },
-
-
     underline:
 	{
         height: 3,
@@ -111,13 +126,17 @@ const styles = StyleSheet.create({
 
     categoryContainer:
 	{
-		flexDirection: 'row',
-		justifyContent: 'space-around',
+        paddingVertical: 5,
+		//marginTop: 20,
+    	alignItems: 'center',
+    	width: '100%',
+    },
+    categoryScrollContent:
+	{
+		paddingHorizontal: 20, 
 		alignItems: 'center',
-        paddingVertical: 20,
-		//marginTop: 10,
-		paddingHorizontal: 30,
-		width: '100%',
+		paddingBottom: 15,
+		gap: 12,
     },
     inactiveCategoryCircle:
 	{
@@ -146,7 +165,7 @@ const styles = StyleSheet.create({
     },
 	inactiveCategoryText:
 	{
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
         color: Colors.inactiveButtonText,
     },
