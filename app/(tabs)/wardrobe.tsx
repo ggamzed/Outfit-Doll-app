@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, Image } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, FlatList, Image, StyleSheet, Text, View } from "react-native";
+import { usePathname, useRouter } from "expo-router";
 
 import { ScreenWrapper } from "@/src/components/common/ScreenWrapper";
-
-import { Metrics } from "@/src/constants/Metrics";
+import { DollView } from "@/src/components/doll/DollView";
+import { DraggableItemCard } from "@/src/components/wardrobe/DraggableItemCard";
 import { Colors } from "@/src/constants/Colors";
+import { Metrics } from "@/src/constants/Metrics";
+import { ClothingItem, useOutfit } from "@/src/state/OutfitContext";
 
 
 const CATEGORIES = [
@@ -17,87 +20,311 @@ const CATEGORIES = [
     { id: '7', name: 'Accessory' },
 ];
 
-// MOCK DATA
-const CLOTHING_ITEMS = [
-    { id: '1', categoryId: '2', name: 'Beyaz Tişört', image: null }, // T-shirts
-    { id: '2', categoryId: '2', name: 'Siyah Tişört', image: null }, // T-shirts
-    { id: '3', categoryId: '3', name: 'Mavi Kot', image: null },     // Pants
-    { id: '4', categoryId: '5', name: 'Nike Air', image: null },    // Shoes
-    { id: '5', categoryId: '3', name: 'bluz', image: null },    // Shoes
-    // Eğer burası boşsa [], ekranda hiç kutu görünmez!
+const CLOTHING_ITEMS: ClothingItem[] = [
+	{ id: "1", categoryId: "3", name: "Siyah Tişört", image: "https://static.vecteezy.com/system/resources/thumbnails/027/112/690/small/black-t-shirt-mockup-isolated-on-transparent-background-ai-generative-png.png" },
+	{ id: "2", categoryId: "3", name: "Beyaz Tişört", image: "https://png.pngtree.com/png-vector/20230902/ourmid/pngtree-white-t-shirt-mockup-realistic-t-shirt-png-image_9906363.png" },
+	{ id: "3", categoryId: "4", name: "Mavi Kot", image: "https://static.vecteezy.com/system/resources/thumbnails/021/916/575/small/blue-jean-shorts-isolated-on-a-transparent-background-png.png" },
+	{ id: "4", categoryId: "5", name: "Nike Air", image: null },
+	{ id: "5", categoryId: "5", name: "bluz", image: null },
 ];
+
+function clamp01(x: number) {
+  	return Math.max(0, Math.min(1, x));
+}
 
 export default function WardrobeScreen()
 {
-    const [activeHeader, setActiveHeader] = useState('Clothes');
-    const [activeCategory, setActiveCategory] = useState('1');
+	const router = useRouter();
+	const pathname = usePathname();
+	const isWardrobeRoute = (pathname ?? "").endsWith("/wardrobe");
+	const [activeHeader, setActiveHeader] = useState<"Clothes" | "Outfits">("Clothes");
+	const [activeCategory, setActiveCategory] = useState("1");
 
-	const filteredItems = activeCategory === '1'
-        ? CLOTHING_ITEMS
-        : CLOTHING_ITEMS.filter(item => item.categoryId === activeCategory);
+	const { applyItem } = useOutfit();
 
-    return (
-        <ScreenWrapper>
-            <View style={styles.headerContainer}>
-                <TouchableOpacity onPress={() => setActiveHeader('Clothes')}>
-                    <Text style={[styles.inactiveHeaderText, activeHeader === 'Clothes' && styles.activeHeaderText]}>Clothes</Text>
-                    {activeHeader === 'Clothes' && <View style={styles.underline} />}
-                </TouchableOpacity>
+	const filteredItems = useMemo(() => {
+		if (activeCategory === "1")
+			return CLOTHING_ITEMS;
+		return CLOTHING_ITEMS.filter((item) => item.categoryId === activeCategory);
+	}, [activeCategory]);
 
-                <TouchableOpacity onPress={() => setActiveHeader('Outfits')}>
-                    <Text style={[styles.inactiveHeaderText, activeHeader === 'Outfits' && styles.activeHeaderText]}>Outfits</Text>
-                    {activeHeader === 'Outfits' && <View style={styles.underline} />}
-                </TouchableOpacity>
-            </View>
+	const itemCardSize = (Metrics.screenWidth - 50) / 3;
+	const thresholdPx = Metrics.screenWidth * 0.10;
+	const dragProgress = useRef(new Animated.Value(0)).current;
+	
+	const wardrobeTranslateX = dragProgress.interpolate({
+		inputRange: [0, 1],
+		outputRange: [0, Metrics.screenWidth],
+	});
 
-			<View style={styles.categoryContainer}>
-				<FlatList
-					horizontal
-					showsHorizontalScrollIndicator={false}
-					data={CATEGORIES}
-					keyExtractor={(item) => item.id}
-					contentContainerStyle={styles.categoryScrollContent}
-					renderItem={({ item }) => (
-						<TouchableOpacity 
-							onPress={() => setActiveCategory(item.id)}
-							style={[ 
-								styles.inactiveCategoryCircle, 
-								activeCategory === item.id && styles.activeCategoryCircle 
-							]} 
+	const wardrobeOpacity = dragProgress.interpolate({
+		inputRange: [0, 1],
+		outputRange: [1, 0.4],
+	});
+	const [wardrobeDismissed, setWardrobeDismissed] = useState(false);
+	const wardrobeDismissedRef = useRef(false);
+	const [activeDragItemId, setActiveDragItemId] = useState<string | null>(null);
+	const [ghostItem, setGhostItem] = useState<ClothingItem | null>(null);
+	const ghostItemRef = useRef<ClothingItem | null>(null);
+	const ghostOpacity = useRef(new Animated.Value(0)).current;
+	const ghostX = useRef(new Animated.Value(0)).current;
+	const ghostY = useRef(new Animated.Value(0)).current;
+
+	useEffect(() => {
+		if (!isWardrobeRoute)
+			return;
+		setWardrobeDismissed(false);
+		wardrobeDismissedRef.current = false;
+		setActiveDragItemId(null);
+		dragProgress.setValue(0);
+		ghostOpacity.setValue(0);
+		ghostX.setValue(0);
+		ghostY.setValue(0);
+		ghostItemRef.current = null;
+		setGhostItem(null);
+	}, [isWardrobeRoute, dragProgress, ghostOpacity, ghostX, ghostY]);
+
+	const wardrobeAnimatedStyle = {
+		transform: [{ translateX: wardrobeTranslateX }],
+		opacity: wardrobeOpacity,
+	};
+
+	const onDragStart = (item: ClothingItem) => {
+		if (wardrobeDismissedRef.current)
+			return;
+		wardrobeDismissedRef.current = false;
+		setActiveDragItemId(item.id);
+		setGhostItem(item);
+		ghostItemRef.current = item;
+		ghostOpacity.setValue(1);
+		dragProgress.setValue(0);
+	};
+
+	const onDragMove = ({ moveX, moveY, progress,
+	} : {
+		moveX: number;
+		moveY: number;
+		progress: number;
+		}) => {
+			if (wardrobeDismissedRef.current)
+				return;
+			dragProgress.setValue(clamp01(progress));
+			ghostX.setValue(moveX - itemCardSize / 2);
+			ghostY.setValue(moveY - itemCardSize / 2);
+		};
+
+  	const onDragRelease = ({ progress }: { progress: number }) => {
+		const p = clamp01(progress);
+		const item = ghostItemRef.current;
+
+		setActiveDragItemId(null);
+
+		if (p >= 1 && item && !wardrobeDismissedRef.current) {
+			applyItem(item);
+			setWardrobeDismissed(true);
+			wardrobeDismissedRef.current = true;
+
+			Animated.timing(dragProgress, {
+				toValue: 1,
+				duration: 450,
+				useNativeDriver: false,
+			}).start(() => {
+				router.replace("/");
+			});
+
+			Animated.timing(ghostOpacity, {
+				toValue: 0,
+				duration: 200,
+				useNativeDriver: false,
+			}).start(() => {
+				ghostItemRef.current = null;
+				setGhostItem(null);
+			});
+			return ;
+		}
+		Animated.parallel([
+			Animated.timing(dragProgress, {
+				toValue: 0,
+				duration: 180,
+				useNativeDriver: false,
+			}),
+			Animated.timing(ghostOpacity, {
+				toValue: 0,
+				duration: 120,
+				useNativeDriver: false,
+			}),
+			]).start(() => {
+			ghostItemRef.current = null;
+			setGhostItem(null);
+			});
+	};
+
+  	return (
+		<ScreenWrapper style={styles.container}>
+			<View style={styles.stage}>
+				<DollView />
+				<Animated.View
+					style={[styles.wardrobeLayer, wardrobeAnimatedStyle]}
+					pointerEvents={wardrobeDismissed ? "none" : "auto"}
+				>
+				<View style={styles.headerContainer}>
+					<View style={styles.headerOption}>
+					<Text
+						onPress={() => setActiveHeader("Clothes")}
+						style={[
+						styles.inactiveHeaderText,
+						activeHeader === "Clothes" && styles.activeHeaderText,
+						]}
+					>
+						Clothes
+					</Text>
+					{activeHeader === "Clothes" && <View style={styles.underline} />}
+					</View>
+
+					<View style={styles.headerOption}>
+					<Text
+						onPress={() => setActiveHeader("Outfits")}
+						style={[
+						styles.inactiveHeaderText,
+						activeHeader === "Outfits" && styles.activeHeaderText,
+						]}
+					>
+						Outfits
+					</Text>
+					{activeHeader === "Outfits" && <View style={styles.underline} />}
+					</View>
+				</View>
+
+				<View style={styles.categoryContainer}>
+					<FlatList
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						data={CATEGORIES}
+						keyExtractor={(item) => item.id}
+						contentContainerStyle={styles.categoryScrollContent}
+						scrollEnabled={activeDragItemId == null}
+						renderItem={({ item }) => (
+						<View
+						style={[
+							styles.inactiveCategoryCircle,
+							activeCategory === item.id && styles.activeCategoryCircle,
+						]}
 						>
-							<Text style={[
-								styles.inactiveCategoryText, 
-								activeCategory === item.id && styles.activeCategoryText
-							]}>
-								{item.name}
-							</Text>
-						</TouchableOpacity>
+						<Text
+							onPress={() => setActiveCategory(item.id)}
+							style={[
+							styles.inactiveCategoryText,
+							activeCategory === item.id && styles.activeCategoryText,
+							]}
+						>
+							{item.name}
+						</Text>
+						</View>
+					)}
+					/>
+				</View>
+
+				<FlatList
+					data={filteredItems}
+					numColumns={3}
+					keyExtractor={(item) => item.id}
+					contentContainerStyle={styles.gridContent}
+					columnWrapperStyle={styles.columnWrapper}
+					scrollEnabled={activeDragItemId == null}
+					renderItem={({ item }) => (
+					<DraggableItemCard
+						item={item}
+						size={itemCardSize}
+						thresholdPx={thresholdPx}
+						disabled={wardrobeDismissed}
+						hiddenWhenActive
+						isActiveDrag={activeDragItemId === item.id}
+						onDragStart={onDragStart}
+						onDragMove={onDragMove}
+						onDragRelease={onDragRelease}
+					/>
 					)}
 				/>
-			</View>	
+				</Animated.View>
 
-            <FlatList
-                data={filteredItems}
-                numColumns={3}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.gridContent}
-                columnWrapperStyle={styles.columnWrapper}
-                renderItem={({ item }) => (
-                    <TouchableOpacity style={styles.itemCard}>
-                        {item.image ? (
-                            <Image source={{ uri: item.image }} style={styles.itemImage} />
-                        ) : (
-                            <View style={styles.imagePlaceholder}>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                )}
-            />
-        </ScreenWrapper>
-    );
+				<Animated.View
+				pointerEvents="none"
+				style={[
+					styles.ghost,
+					{
+					opacity: ghostOpacity,
+					width: itemCardSize,
+					height: itemCardSize,
+					left: ghostX,
+					top: ghostY,
+					},
+				]}
+				>
+				{ghostItem?.image ? (
+					<Image
+					source={{ uri: ghostItem.image }}
+					style={[styles.ghostImage, { width: itemCardSize, height: itemCardSize }]}
+					/>
+				) : (
+					<View style={styles.ghostInner} />
+				)}
+				</Animated.View>
+			</View>
+		</ScreenWrapper>
+	);
 }
 
 const styles = StyleSheet.create({
+	container:
+	{
+		flex: 1,
+		backgroundColor: Colors.lightBackground,
+	},
+	stage:
+	{
+		flex: 1,
+		position: "relative",
+	},
+	wardrobeLayer:
+	{
+		position: "absolute",
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		backgroundColor: Colors.lightBackground,
+		zIndex: 1,
+		elevation: 5,
+	},
+	ghost:
+	{
+		position: "absolute",
+		borderRadius: 20,
+		borderWidth: 1,
+		borderColor: "rgba(0,0,0,0.08)",
+		elevation: 10,
+		overflow: "hidden",
+		zIndex: 10,
+	},
+	ghostInner:
+	{
+		width: "100%",
+		height: "100%",
+		backgroundColor: "rgba(255,255,255,0.25)",
+	},
+	ghostImage:
+	{
+		position: "absolute",
+		left: 0,
+		top: 0,
+		right: 0,
+		bottom: 0,
+		resizeMode: "cover",
+	},
+	headerOption:
+	{
+		alignItems: "center",
+	},
     headerContainer:
 	{
         flexDirection: 'row',
@@ -174,8 +401,7 @@ const styles = StyleSheet.create({
 		color: Colors.activeButtonText,
         
     },
-
-
+	
     gridContent:
 	{
         paddingHorizontal: 15,
@@ -189,7 +415,7 @@ const styles = StyleSheet.create({
     },
     itemCard:
 	{
-        width: (Metrics.screenWidth - 50) / 3, // 3 kolon + boşluklar
+        width: (Metrics.screenWidth - 50) / 3,
         height: (Metrics.screenWidth - 50) / 3,
         backgroundColor: '#FFF',
         borderRadius: 20,
