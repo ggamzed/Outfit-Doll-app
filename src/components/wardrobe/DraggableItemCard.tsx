@@ -1,6 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useRef } from "react";
-import { Image, PanResponder, StyleSheet, Text, View } from "react-native";
+import { Image, PanResponder, StyleSheet, View } from "react-native";
 
+import { Colors } from "@/src/constants/Colors";
 import { ClothingItem } from "@/src/state/OutfitContext";
 
 type DraggableItemCardProps = {
@@ -10,6 +12,8 @@ type DraggableItemCardProps = {
 	disabled?: boolean;
 	hiddenWhenActive?: boolean;
 	isActiveDrag?: boolean;
+	selectionMode?: boolean;
+	selected?: boolean;
 	onDragStart: (item: ClothingItem) => void;
 	onDragMove: (args: { moveX: number; moveY: number; progress: number }) => void;
 	onDragRelease: (args: { progress: number }) => void;
@@ -20,11 +24,9 @@ function clamp01(x: number) {
 }
 
 export function DraggableItemCard({ item, size, thresholdPx, disabled, hiddenWhenActive,
-			isActiveDrag, onDragStart, onDragMove, onDragRelease, }: DraggableItemCardProps) {
+			isActiveDrag, selectionMode, selected, onDragStart, onDragMove, onDragRelease, }: DraggableItemCardProps) {
 	const progressRef = useRef(0);
 	const startMoveXRef = useRef<number | null>(null);
-
-	const label = useMemo(() => item.name.trim().split(" ")[0] ?? item.name, [item.name]);
 
 	const panResponder = useMemo(() => {
 		return PanResponder.create({
@@ -67,14 +69,24 @@ export function DraggableItemCard({ item, size, thresholdPx, disabled, hiddenWhe
 		});
 	}, [disabled, item, onDragMove, onDragRelease, onDragStart, thresholdPx]);
 
-	const cardOpacity = hiddenWhenActive && isActiveDrag ? 0 : 1;
+	const cardOpacity =
+		hiddenWhenActive && isActiveDrag
+			? 0
+			: selectionMode && !selected
+				? 0.55
+				: 1;
 
 	return (
 		<View
 			{...panResponder.panHandlers}
 			style={[
 				styles.itemCard,
-				{ width: size, height: size, opacity: cardOpacity, backgroundColor: "#FFF" },
+				{
+					width: size,
+					height: size,
+					opacity: cardOpacity,
+					backgroundColor: "#FFF",
+				},
 			]}
 			pointerEvents={disabled ? "none" : "auto"}
 			>
@@ -83,9 +95,14 @@ export function DraggableItemCard({ item, size, thresholdPx, disabled, hiddenWhe
 			) : (
 				<View style={[styles.imagePlaceholder, { backgroundColor: "#E5E7EB" }]} />
 			)}
-			<Text style={styles.label} numberOfLines={2}>
-				{label}
-			</Text>
+			{selectionMode && selected ? (
+				<>
+					<View style={styles.selectionRing} pointerEvents="none" />
+					<View style={styles.selectionCheck} pointerEvents="none">
+						<Ionicons name="checkmark-circle" size={22} color={Colors.activeButton} />
+					</View>
+				</>
+			) : null}
 		</View>
 	);
 }
@@ -102,25 +119,29 @@ const styles = StyleSheet.create({
 	imagePlaceholder:
 	{
 		width: "84%",
-		height: "58%",
+		height: "72%",
 		borderRadius: 14,
 		opacity: 0.35,
-		marginBottom: 6,
 	},
 	media:
 	{
 		width: "84%",
-		height: "58%",
+		height: "72%",
 		borderRadius: 14,
-		marginBottom: 6,
 		resizeMode: "cover",
 	},
-	label:
+	selectionRing:
 	{
-		fontSize: 12,
-		fontWeight: "700",
-		color: "#222",
-		textAlign: "center",
+		...StyleSheet.absoluteFillObject,
+		borderRadius: 20,
+		borderWidth: 3,
+		borderColor: Colors.activeButton,
+	},
+	selectionCheck:
+	{
+		position: "absolute",
+		top: 6,
+		right: 6,
 	},
 });
 

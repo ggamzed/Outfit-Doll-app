@@ -15,10 +15,10 @@ export const Metrics = {
     //paddingLarge: 24,
 
 	//borderRadiusSmall: 4,
-    //borderRadiusMedium: 12, // Modern "dolap" kartları için ideal
-    //borderRadiusFull: 99,   // Tam yuvarlak butonlar için
+    //borderRadiusMedium: 12,
+    //borderRadiusFull: 99,
 
-    // 5. Bileşen Boyutları
+    // Component sizes
     //headerHeight: 60,
     //buttonHeight: 50,
 } as const;

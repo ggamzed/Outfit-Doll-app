@@ -13,11 +13,11 @@ export const ErrorModal = ({ visible, message, onClose }: ErrorModalProps) => {
         <Modal transparent visible={visible} animationType="fade">
             <View style={styles.overlay}>
                 <View style={styles.alertBox}>
-                    <Text style={styles.title}>Eyvah! 🛠️</Text>
+                    <Text style={styles.title}>Oops! 🛠️</Text>
                     <Text style={styles.message}>{message}</Text>
                     
                     <TouchableOpacity style={styles.button} onPress={onClose}>
-                        <Text style={styles.buttonText}>Anladım</Text>
+                        <Text style={styles.buttonText}>OK</Text>
                     </TouchableOpacity>
                 </View>
             </View>
