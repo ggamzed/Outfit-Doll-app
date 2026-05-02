@@ -7,6 +7,7 @@ import { Metrics } from "@/src/constants/Metrics";
 import { Colors } from "@/src/constants/Colors";
 import { ClothingItem, useOutfit } from "@/src/state/OutfitContext";
 import { getOverlayLayout } from "@/src/components/doll/overlayLayout";
+import Avatar from "@/src/components/icons/Avatar";
 
 const MIN_SIZE = 30;
 const HANDLE_SIZE = 28;
@@ -267,8 +268,8 @@ export function DollView()
 		setSelectedInstanceId((s) => (s === id ? null : s));
 	}, [removeInstance]);
 
-	const avatarWidth  = Metrics.screenWidth  * 1.3;
-	const avatarHeight = Metrics.screenHeight * 0.78;
+	const avatarWidth  = Metrics.screenWidth  * 1.5;
+	const avatarHeight = Metrics.screenHeight * 0.85;
 
 	return (
 		<GestureHandlerRootView style={styles.gestureRoot}>
@@ -284,7 +285,7 @@ export function DollView()
 				{
 					width: avatarWidth,
 					height: avatarHeight,
-					bottom: Metrics.screenHeight * 0.05,
+					bottom: Metrics.screenHeight * 0.03,
 					marginLeft: -(avatarWidth / 2),
 				},
 				]}
@@ -298,10 +299,11 @@ export function DollView()
 					accessibilityLabel="Clear outfit selection"
 				/>
 				<View style={styles.avatarImageWrap} pointerEvents="none">
-				<Image
-				source={require("@/assets/avatar.png")}
-				style={styles.avatarImage}
-				/>
+				<Avatar 
+				width={avatarWidth} 
+				height={avatarHeight} 
+				skinColor={Colors.skinTone1} // Buraya state'ten gelen ten rengini bağlayabilirsin
+			/>
 				</View>
 
 				{appliedInstances.map(({ instanceId, item }) => (

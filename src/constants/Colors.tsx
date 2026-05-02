@@ -6,7 +6,7 @@ export const Colors = {
 	lightBackground: '#fff5feff',
 	darkBackground: '#FDE2F3',
 
-
+	skinTone1: '#FFDFC4',
 	//tab: '#fff5feff',
 
 	//textPrimary: '#333333',
