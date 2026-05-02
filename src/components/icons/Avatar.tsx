@@ -2,8 +2,8 @@ import React, { memo } from 'react';
 import Svg, { G, Path, ClipPath, Ellipse, Defs, LinearGradient, Stop, Symbol as SvgSymbol, Use} from 'react-native-svg';
 
 interface AvatarProps {
-	skinColor?: string; // Dışarıdan gelen ten rengi (Örn: #FFDFC4)
-	outlineColor?: string; // Dış çerçeve rengi (Opsiyonel)
+	skinColor?: string; // Dışarıdan gelen ten rengi
+	outlineColor?: string; // Dış çerçeve rengi
 	bodyFrameShadow?: string;
 	width: number;
 	height: number;
@@ -11,7 +11,7 @@ interface AvatarProps {
 
 const Avatar = memo(({ 
 	skinColor = '#FFDFC4', 
-	outlineColor = '#A0785D', // Varsayılan olarak orta koyulukta bir kahve
+	outlineColor = '#A0785D',
 	bodyFrameShadow = "#ffb271",
 	width, 
 	height 
@@ -21,7 +21,7 @@ const Avatar = memo(({
 		width={width}
 		height={height}
 		viewBox="0 0 1000 2000"
-		// style={{ backgroundColor: 'transparent' }} // Gerekirse ekleyebilirsin
+		// style={{ backgroundColor: 'transparent' }}
 		>
 			<Defs>
 				<LinearGradient 
